@@ -1,181 +1,194 @@
-import time
+import threading
+from tkinter import *
+
 from selenium import webdriver
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
-chrome_options = Options()
-chrome_options.add_argument("--start-fullscreen")  # 배율을 1.5로 설정 (원하는 값으로 변경)
-chrome_options.add_argument("--force-device-scale-factor=0.8")  # Set the device scale factor to 0.5
-driver = webdriver.Chrome(options=chrome_options)
 
+class App(threading.Thread):
+    def __init__(self):
+        super().__init__()
+        self.opt = Options()
+        self.opt.add_argument('--start-fullscreen')
+        self.opt.add_argument("--force-device-scale-factor=0.8")  # Set the device scale factor to 0.5
+        self.driver = webdriver.Chrome(options=self.opt)
+        self.wait = WebDriverWait(self.driver, 10)
+        self.url = "https://ticket.interpark.com/Gate/TPLogin.asp"
+        self.driver.get(self.url)
 
-def close_popup(driver):
-    try:
-        popup_close_button = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="popup-prdGuide"]/div/div[3]/button'))
-        )
-        popup_close_button.click()
-    except:
-        pass
+        # tkinter
+        self.dp = Tk()
+        self.dp.geometry("500x500")
+        self.dp.title("인터파크 티케팅 프로그램")
+        self.object_frame = Frame(self.dp)
+        self.object_frame.pack()
 
-my_interpark_id = "oswzxc"
-my_interpark_pw = "theone!23"
-login_url = "https://ticket.interpark.com/Gate/TPLogin.asp" # 로그인 창
-my_url = "https://tickets.interpark.com/goods/23012526" # 공연 URL
+        self.id_label = Label(self.object_frame, text="ID")
+        self.id_label.grid(row=1, column=0)
+        self.id_entry = Entry(self.object_frame, show="*", width=40)
+        self.id_entry.grid(row=1, column=1)
+        self.pw_label = Label(self.object_frame, text="PASSWORD")
+        self.pw_label.grid(row=2, column=0)
+        self.pw_entry = Entry(self.object_frame, show="*", width=40)
+        self.pw_entry.grid(row=2, column=1)
+        self.login_button = Button(self.object_frame, text="Login", width=3, height=2, command=self.login)
+        self.login_button.grid(row=3, column=1)
+        self.showcode_label = Label(self.object_frame, text="공연번호")
+        self.showcode_label.grid(row=4, column=0)
+        self.showcode_entry = Entry(self.object_frame, width=40)
+        self.showcode_entry.grid(row=4, column=1)
+        self.showcode_button = Button(self.object_frame, text="직링", width=3, height=2, command=self.link_go)
+        self.showcode_button.grid(row=5, column=1)
+        self.calender_ladel = Label(self.object_frame, text="달력")
+        self.calender_ladel.grid(row=6, column=0)
+        self.calender_entry = Entry(self.object_frame, width=40)
+        self.calender_entry.grid(row=6, column=1)
+        self.date_label = Label(self.object_frame, text="날짜")
+        self.date_label.grid(row=7, column=0)
+        self.date_entry = Entry(self.object_frame, width=40)
+        self.date_entry.grid(row=7, column=1)
+        self.round_label = Label(self.object_frame, text="회차")
+        self.round_label.grid(row=8, column=0)
+        self.round_entry = Entry(self.object_frame, width=40)
+        self.round_entry.grid(row=8, column=1)
+        self.seat_label = Label(self.object_frame, text="좌석 수")
+        self.seat_label.grid(row=9, column=0)
+        self.seat_entry = Entry(self.object_frame, width=40)
+        self.seat_entry.grid(row=9, column=1)
+        self.test_button = Button(self.object_frame, text="테스트", width=3, height=2, command=self.seat_select)
+        self.test_button.grid(row=10, column=1)
+        self.birth_label = Label(self.object_frame, text="생년월일")
+        self.birth_label.grid(row=11, column=0)
+        self.birth_entry = Entry(self.object_frame, width=40, show='*')
+        self.birth_entry.grid(row=11, column=1)
+        self.bank_var = IntVar(value=0)
+        self.bank_check = Checkbutton(self.object_frame, text='무통장', variable=self.bank_var)
+        self.bank_check.grid(row=12, column=0)
+        self.kakao_var = IntVar(value=0)
+        self.kakao_check = Checkbutton(self.object_frame, text='카카오', variable=self.kakao_var)
+        self.kakao_check.grid(row=12, column=1)
+        self.test2_button = Button(self.object_frame, text="테스트", width=3, height=2, command=self.payment)
+        self.test2_button.grid(row=12, column=2)
+        self.dp.mainloop()
 
-want_month = 1 # 원하는 월
-want_day = 13 # 원하는 일
-want_turn = 2 # 원하는 공연 회차 ( 1회 = 2시 , 2회 = 7 시)
-want_floor = 3 # 원하는 관람 층 (1 = 1층, 2 = 2층, 3 = 3층)
+    # 로그인 하기
+    def login(self):
+        def task():
+            self.driver.switch_to.frame(self.driver.find_element_by_tag_name('iframe'))
+            self.driver.find_element_by_name('userId').send_keys(self.id_entry.get())
+            self.driver.find_element_by_id('userPwd').send_keys(self.pw_entry.get())
+            self.driver.find_element_by_id('btn_login').click()
 
-driver.get(login_url)
+        newthread = threading.Thread(target=task)
+        newthread.start()
 
-iframes = driver.find_elements(By.TAG_NAME, "iframe")
-driver.switch_to.frame(iframes[0])
+    # 직링 바로가기
+    def link_go(self):
+        def task():
+            self.driver.get('http://poticket.interpark.com/Book/BookSession.asp?GroupCode=' + self.showcode_entry.get())
 
-time.sleep(0.2)
-id_input = driver.find_element(By.CSS_SELECTOR, "#userId")
-pw_input = driver.find_element(By.CSS_SELECTOR, "#userPwd")
-id_input.send_keys(my_interpark_id)
-time.sleep(0.2)
-pw_input.send_keys(my_interpark_pw)
-button = driver.find_element(By.CSS_SELECTOR, "#btn_login")
-button.click()
+        newthread = threading.Thread(target=task)
+        newthread.start()
 
-driver.get(my_url)
-time.sleep(0.3)
-
-nxt_button = driver.find_element(By.XPATH, "//*[@id='productSide']/div/div[1]/div[1]/div[2]/div/div/div/div/ul[1]/li[3]")
-
-# 팝업 닫기
-close_popup(driver)
-
-while True:
-    current_date = driver.find_element(By.XPATH,"//*[@id='productSide']/div/div[1]/div[1]/div[2]/div/div/div/div/ul[1]/li[2]")
-    cur_month = int(current_date.text.split(' ')[1])
-    if cur_month != want_month:
-        nxt_button.click()
-        time.sleep(0.3)
-    else:
-        time.sleep(0.3)
-        break
-
-find_day = driver.find_element(By.XPATH, "//li[text()='"+str(want_day)+"']")
-find_day.click()
-
-turn_list = driver.find_elements(By.CLASS_NAME, "timeTableItem")
-turn_list[want_turn - 1].click()
-
-driver.switch_to.window(driver.window_handles[-1])
-
-time.sleep(1)
-driver.find_element(By.XPATH, '//*[@id="productSide"]/div/div[2]/a[1]').click()
-
-time.sleep(1)
-
-main_window_handle = driver.current_window_handle
-all_window_handles = driver.window_handles
-new_window_handle = [handle for handle in all_window_handles if handle != main_window_handle][0]
-# 새 창으로 전환
-driver.switch_to.window(new_window_handle)
-
-iframes = driver.find_elements(By.TAG_NAME, "iframe")
-for ifr in iframes:
-    if ifr.get_attribute('name') == 'ifrmSeat':
-        print("convert")
-        driver.switch_to.frame(ifr)
-        driver.switch_to.frame('ifrmSeatView')
-        break
-
-if want_floor != 1: # 2 or 3층
-    Seat_region = driver.find_element(By.XPATH, "//*[@id='TmgsTable']/tbody/tr/td/map")
-    area_element = Seat_region.find_element(By.TAG_NAME, "area")
-
-    href_value = area_element.get_attribute("href")
-    # href 값이 javascript:로 시작하는지 확인
-    if href_value.startswith("javascript:"):
-        driver.execute_script(href_value)
-    time.sleep(0.5)
-
-driver.switch_to.window(new_window_handle)
-iframes = driver.find_elements(By.TAG_NAME, "iframe")
-
-for ifr in iframes:
-    if ifr.get_attribute('name') == 'ifrmSeat':
-        driver.switch_to.frame(ifr)
-        driver.switch_to.frame('ifrmSeatDetail')
-        break
-
-available_reserve_seat = driver.find_elements(By.XPATH, "//img[@class='stySeat']")
-
-# 먹을수있는 자리를 먹어라
-want_seat_cnt = 3 # 자리수
-want_continue = 1 # 1 = 연석, 0 = 연석 상관 없음
-
-flag = 0
-want_seat_list = []
-if want_continue == 1: # 연석 자리 잡기
-
-    seat_map = [[[] for i in range(25)] for j in range(4)]
-    seat_map_num = [[[] for i in range(25)] for j in range(4)]
-    for seat in available_reserve_seat:
-        _str = str(seat.get_attribute('alt')).split(' ')
-        seat_floor = int(_str[1].split('-')[0].split('층')[0])
-        if seat_floor == want_floor:
-            seat_row = int(_str[1].split('-')[1].split('열')[0])
-            seat_column = int(_str[1].split('-')[2])
-            seat_map[seat_floor][seat_row].append(seat.get_attribute('alt'))
-            seat_map_num[seat_floor][seat_row].append(seat_column)
-
-    for row in range(25): # 열
-        _size = len(seat_map[want_floor][row])
-        if _size >= want_seat_cnt: # 해당 층의 열에 원하는 연석 자리수 이상있어야함
-            for i in range(0, _size - want_seat_cnt):
-                ret = 0 # 현재 열에서 k 자리 연석이 있냐?
-                pre_num = seat_map_num[want_floor][row][i] - 1
-                for k in range(want_seat_cnt):
-                    if seat_map_num[want_floor][row][i+k] == pre_num + 1:
-                        ret += 1
-                        pre_num += 1
-                    else:
+    # 날짜 선택
+    def date_select(self):
+        def task():
+            while (True):
+                try:
+                    self.driver.switch_to.frame(self.driver.find_element_by_id('ifrmBookStep'))
+                    if int(self.calender_entry.get()) == 0:
+                        pass
+                    elif int(self.calender_entry.get()) >= 1:
+                        for i in range(1, int(self.calender_entry.get()) + 1):
+                            self.driver.find_element_by_xpath("/html/body/div/div[1]/div[1]/div/span[3]").click()
+                    try:
+                        self.driver.find_element_by_xpath(
+                            '(//*[@id="CellPlayDate"])' + "[" + self.date_entry.get() + "]").click()
                         break
+                    except NoSuchElementException:
+                        self.link_go()
+                        break
+                except NoSuchElementException:
+                    self.link_go()
+                    break
+            self.wait.until(EC.element_to_be_clickable(
+                (By.XPATH, '/html/body/div/div[3]/div[1]/div/span/ul/li[' + self.round_entry.get() + ']/a'))).click()
+            self.driver.switch_to.default_content()
+            self.driver.find_element_by_id('LargeNextBtnImage').click()
 
-            if ret == want_seat_cnt:
-                for k in range(want_seat_cnt):
-                    want_seat_list.append(seat_map[want_floor][row][i+k])
-                flag = 1
-                break
-        if flag == 1:
-            break
+        newthread = threading.Thread(target=task)
+        newthread.start()
 
-else:
-    ret = 0
-    for seat in available_reserve_seat:
-        want_seat_list.append(seat)
-        ret = ret + 1
-        if ret == want_seat_cnt:
-            flag = 1
-            break
+    # 좌석 선택
+    def seat_select(self):
+        def task():
+            self.driver.switch_to.default_content()
+            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeat"))
+            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeatDetail"))
+            self.wait.until(EC.presence_of_element_located(
+                (By.CSS_SELECTOR, 'img[src="http://ticketimage.interpark.com/TMGSNAS/TMGS/G/1_90.gif"]')))
+            seats = self.driver.find_elements_by_css_selector(
+                'img[src="http://ticketimage.interpark.com/TMGSNAS/TMGS/G/1_90.gif"]')
+            print(len(seats))
+            if int(self.seat_entry.get()) > len(seats):
+                seat_count = len(seats)
+            else:
+                seat_count = int(self.seat_entry.get())
+            for i in range(0, seat_count):
+                seats[i].click()
+            print("좌석 선택 완료")
+            self.driver.switch_to.default_content()
+            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeat"))
+            self.driver.find_element_by_id("NextStepImage").click()
 
-if flag == 1:
-    for str in want_seat_list:
-        b1 = driver.find_element(By.XPATH,"//img[@alt='"+str+"']")
-        b1.click()
+        newthread = threading.Thread(target=task)
+        newthread.start()
 
-    driver.switch_to.window(new_window_handle)
-    iframes = driver.find_elements(By.TAG_NAME, "iframe")
+    # 결제
+    def payment(self):
+        def bank():
+            self.driver.switch_to.frame(self.driver.find_element_by_xpath('//*[@id="ifrmBookStep"]'))
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="Payment_22004"]/td/input'))).click()
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="BankCode"]/option[7]'))).click()
+            self.driver.switch_to.default_content()
+            self.driver.find_element_by_xpath('//*[@id="SmallNextBtnImage"]').click()
+            self.driver.switch_to.frame(self.driver.find_element_by_xpath('//*[@id="ifrmBookStep"]'))
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="checkAll"]'))).click()
+            self.driver.switch_to.default_content()
+            # self.driver.find_element_by_xpath('//*[@id="LargeNextBtnImage"]').click()
 
-    for ifr in iframes:
-        if ifr.get_attribute('name') == 'ifrmSeat':
-            driver.switch_to.frame(ifr)
-            break
+        def kakao():
+            self.driver.switch_to.frame(self.driver.find_element_by_xpath('//*[@id="ifrmBookStep"]'))
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="Payment_22084"]/td/input'))).click()
+            self.driver.switch_to.default_content()
+            self.driver.find_element_by_xpath('//*[@id="SmallNextBtnImage"]').click()
+            self.driver.switch_to.frame(self.driver.find_element_by_xpath('//*[@id="ifrmBookStep"]'))
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="checkAll"]'))).click()
+            self.driver.switch_to.default_content()
+            # self.driver.find_element_by_xpath('//*[@id="LargeNextBtnImage"]').click()
 
-    select_button = driver.find_element(By.XPATH, "//*[@id='NextStepImage']")
-    select_button.click()
+        def task():
+            self.driver.switch_to.default_content()
+            self.driver.find_element_by_xpath('//*[@id="SmallNextBtnImage"]').click()
+            self.driver.switch_to.frame(self.driver.find_element_by_xpath('//*[@id="ifrmBookStep"]'))
+            self.wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="YYMMDD"]'))).send_keys(
+                self.birth_entry.get())
+            self.driver.switch_to.default_content()
+            self.driver.find_element_by_xpath('//*[@id="SmallNextBtnImage"]').click()
+            bank2 = self.bank_var.get()
+            kakao2 = self.kakao_var.get()
+            if bank2 == 1:
+                bank()
+            elif kakao2 == 1:
+                kakao()
 
-time.sleep(10)
-driver.switch_to.default_content()
-driver.quit()
+        newthread = threading.Thread(target=task)
+        newthread.start()
+
+
+app = App()
+app.start()
