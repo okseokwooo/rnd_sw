@@ -78,10 +78,11 @@ class App(threading.Thread):
     # 로그인 하기
     def login(self):
         def task():
-            self.driver.switch_to.frame(self.driver.find_element_by_tag_name('iframe'))
-            self.driver.find_element_by_name('userId').send_keys(self.id_entry.get())
-            self.driver.find_element_by_id('userPwd').send_keys(self.pw_entry.get())
-            self.driver.find_element_by_id('btn_login').click()
+            iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+            self.driver.switch_to.frame(iframes[0])
+            self.driver.find_element(By.CSS_SELECTOR, "#userId").send_keys(self.id_entry.get())
+            self.driver.find_element(By.CSS_SELECTOR, "#userPwd").send_keys(self.pw_entry.get())
+            self.driver.find_element(By.CSS_SELECTOR, "#btn_login").click()
 
         newthread = threading.Thread(target=task)
         newthread.start()
@@ -127,8 +128,8 @@ class App(threading.Thread):
     def seat_select(self):
         def task():
             self.driver.switch_to.default_content()
-            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeat"))
-            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeatDetail"))
+            self.driver.switch_to.frame(self.driver.find_elements(By.TAG_NAME,"ifrmSeat"))
+            self.driver.switch_to.frame("ifrmSeatDetail")
             self.wait.until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, 'img[src="http://ticketimage.interpark.com/TMGSNAS/TMGS/G/1_90.gif"]')))
             seats = self.driver.find_elements_by_css_selector(
@@ -142,8 +143,8 @@ class App(threading.Thread):
                 seats[i].click()
             print("좌석 선택 완료")
             self.driver.switch_to.default_content()
-            self.driver.switch_to.frame(self.driver.find_element_by_name("ifrmSeat"))
-            self.driver.find_element_by_id("NextStepImage").click()
+            self.driver.switch_to.frame(self.driver.find_elements(By.TAG_NAME,"ifrmSeat"))
+            self.driver.find_element(By.XPATH,"//*[@id='NextStepImage']").click()
 
         newthread = threading.Thread(target=task)
         newthread.start()
